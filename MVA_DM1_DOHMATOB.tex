@@ -1,0 +1,340 @@
+% Example LaTeX document for GP111 - note % sign indicates a comment
+\documentclass[9pt]{article}
+\usepackage{amsmath,amsfonts,amssymb, amsthm}
+\usepackage{breqn}
+\usepackage{graphicx}
+
+\newcommand{\Keywords}[1]{\par\noindent
+{\small{\em Keywords\/}: #1}}
+
+% lemma env
+\newtheorem{lemma}{Lemma}
+
+% definition env
+\newtheorem{definition}{Definition}
+
+% Default margins are too wide all the way around. I reset them here
+\setlength{\topmargin}{-.5in}
+\setlength{\textheight}{9in}
+\setlength{\oddsidemargin}{.125in}
+\setlength{\textwidth}{6.25in}
+\begin{document}
+\title{Introduction to Graphical Models: HomeWork \#1 (See attached Python script for all implementations)}
+\author{DOHMATOB Elvis Dopgima\\
+}
+\maketitle
+\section{Solution to Question \#1: Learning in discrete models}
+It is told that $Z$ and $X$ are two discrete variables taking $M$ and $K$ possible values respectively. WLOG, let the sets of these possible values be
+ $\{1, 2, ..., M\}$ and $\{1, 2, ..., K\}$ respectively. We seek \textit{Maximum Likelihood (ML)} estimators --in the \textit{frequentist}
+framework-- for the $M + MK$ parameters:
+ $\pi_{m} := p(Z = m)$ and $\theta_{mk} := p(X = k | Z = m)$, for $1 \le m \le M$, $1 \le k \le K$.%%  Here and hereafter, the ``operator'' \textit{p()} is used with a slight abuse of notation
+ %% to mean ``\textit{probability of}'', and the underlying probability measure $\mathbb{P}$ must be understoond in the specific context.
+ \\ \\
+Let $D$ = \{($z_{1}$, $x_{1}$), ($z_{2}$, $x_{2}$), ..., ($z_{N}$, $x_{N}$)\} be a sample of $N$ i.i.d
+ observations from the joint distribution of $Z$ and $X$.
+%%  With a slight abuse of notation, for each sample point $(z_{n}, x_{n}) \in D$,
+%% we rewrite $z_{n}$ as $z_{n}$ := $({z_{n}^{1}}, {z_{n}^{2}}, ...,{z_{n}^{M}})$ :=
+%%  \textit{binary string of $M$ bits supported at the $z_{n}th$ bit position}; we encode $x_{n}$ similarly.
+%% Now, using \textit{Bayes formula}, the likelihood for a single sample point $(z_{n}, x_{n})$ is\footnote{where we have used the fact that $\mathbf{1}_{\{x_{n} = k\}}\mathbf{1}_{\{z_{n} = m\}} = 1$ if the $n$th observation is $(m, k)$, and 0 otherwise.
+%% }
+
+ By Bayes formula, the likelihood of the $n$th sample point $(z_{n}, x_{n})$ is
+\begin{dmath}
+p((z_{n}, x_{n}) | \pi, \theta) = p(x_{n} | z_{n}, \pi, \theta)p(z_{n} | \pi) = \Bigl(\prod_{k=1}^{K}{(\prod_{m=1}^{M}{\theta_{mk}^{\mathbf{1}_{\{x_{n} = k\}}\mathbf{1}_{\{z_{n} = m\}}}})\Bigr)}\prod_{m=1}^{M}{\pi_{m}^{\mathbf{1}_{\{z_{n} = m\}}}}
+\end{dmath}
+So, by the i.i.d assumption, the likelihood for the sample ($D$) is
+\begin{dmath}
+p(D | \pi, \theta) = \prod_{n=1}^{N}{p((z_{n}, x_{n}) | \pi, \theta)} = \\
+ \prod_{n=1}^{N}{\biggl(\Bigl(\prod_{k=1}^{K}{(\prod_{m=1}^{M}{\theta_{mk}^{\mathbf{1}_{\{x_{n} = k\}}\mathbf{1}_{\{z_{n} = m\}}}})\Bigr)}\prod_{m=1}^{M}{\pi_{m}^{\mathbf{1}_{\{z_{n} = m\}}}}\biggr)} =
+ \prod_{m=1}^{M}{\biggl(\pi_{m}^{\sum_{n=1}^{N}{{\mathbf{1}_{\{z_{n} = m\}}}}}\prod_{k=1}^{K}{\theta_{mk}^{\sum_{n=1}^{N}{\mathbf{1}_{\{z_{n} = m\}}\mathbf{1}_{\{x_{n} = k\}}}}}\biggr)} \\
+= \prod_{m=1}^{M}{\biggl(\pi_{m}^{B_{m}}\prod_{k=1}^{K}{\theta_{mk}^{A_{mk}}}\biggr)}
+\end{dmath},
+where we have changed the order of the products at will\footnote{this is of course legitimate, since all the products are over finite sets}
+ and have introduced auxiliary variables $A_{mk} := \sum_{n=1}^{N}{\mathbf{1}_{\{z_{n} = m\}}\mathbf{1}_{\{x_{n} = k\}}} =$ \textit{number of times the pair $(m, k)$ is observed}, and
+ $B_{m} := \sum_{n=1}^{N}{\mathbf{1}_{\{z_{n} = m\}}} = \sum_{k=1}^{K}{A_{mk}} =$ \textit{number of observed pairs of the form }$(m, *)$.
+Finally, the log-likehood for the sample is easily computed as
+\begin{dmath}
+l(\pi, \theta| D) := \log{p(D | \pi, \theta)} = \sum_{m=1}^{M}{\Bigl(\sum_{k=1}^{K}{A_{mk}\log{\theta_{mk}}} + B_{m}\log{\pi_{m}}\Bigr)}
+\end{dmath}
+It is clear that $l(\pi, \theta| D)$ is $C^{\infty}$ everywhere\footnote{with its codomain extended to $\mathbb{R}$ $\cup$ \{$\pm\infty$\}} on its contrained domain,
+ namely the first \textit{orthant} of the $(M + MK)$-dimensional euclidian space $\mathbb{R}^{M} \times \mathbb{R}^{M \times K}$,
+ being a linear combination of logarithms of the $\pi_{m}$ and the $\theta_{mk}$. Thus to maximize $l(\pi, \theta| D)$ under the stochasticity contraints on $\pi$ and
+ $\theta$, namely, that $\sum_{r=1}^{M}{\pi_{r}} = 1 = \sum_{s=1}^{K}{\theta_{ms}} = 1, \forall m \in \{1, 2, ..., M\}$, we can employ the \textit{Langrage multipliers} trick. That is,  we maximize in $\pi$ and $\theta$, the smooth function
+\begin{dmath}
+\tilde{l}(\pi, \theta, \lambda, \lambda_{1}, ..., \lambda_{M} | D) := l(\pi, \theta| D) + \lambda\Bigl(1 - \sum_{m=1}^{M}{\pi_{m}}\Bigr) + \sum_{m=1}^{M}{\lambda_{m}\Bigl(1 - \sum_{k=1}^{K}{\theta_{mk}}\Bigr)}
+\end{dmath}
+, where $\lambda$, $\lambda_{1}$, ..., $\lambda_{M}$ $\in$ $\mathbb{R}$ are $M + 1$ Langrage multipliers to be determined.
+Differentiating w.r.t $\pi_{m}$ and $\theta_{mk}$ yields
+\[ \frac{\partial \tilde{l}}{\partial \pi_{m}} = \frac{B_{m}}{\pi_{m}} -\lambda\text{; }\frac{\partial \tilde{l}}{\partial \theta_{mk}} = \frac{A_{mk}}{\theta_{mk}} -\lambda_{m} \]
+Equating $\nabla_{(\pi, \theta)}{\tilde{l}}$ to 0 for stationary points begets
+\begin{dmath}
+\pi_{m} = \frac{B_{m}}{\lambda}
+\end{dmath}
+\begin{dmath}
+\theta_{mk} = \frac{A_{mk}}{\lambda_{m}}
+\end{dmath}
+Using the stochasticity condition on $\pi$ in (5) gives
+\[ \frac{\sum_{r=1}^{M}{B_{r}}}{\lambda} = 1 \Rightarrow \lambda = \sum_{r=1}^{M}{B_{r}} = -N \]
+Substituting $\lambda$ in (5), we obtain
+\begin{dmath}
+\pi_{m} = \frac{B_{m}}{N}
+\end{dmath}
+Similarly, the row-stochasticity condition on $\theta$ in (6) yield
+\[ \frac{\sum_{s=1}^{K}{A_{ms}}}{\lambda_{m}} = 1 \Rightarrow \lambda_{m} = \sum_{s=1}^{K}{A_{ms}} = B_{m}, \forall m \in \{1, 2, ..., M\} \]
+Substituting $\lambda_{m}$ in (6), we obtain
+\begin{dmath}
+\theta_{mk} = \frac{A_{mk}}{B_{m}}
+\end{dmath}
+Thus the log-likelihood $l(\pi, \theta | D)$ has a unique stationary point $(\pi, \theta)$ given by (3) and (4).
+Finally,  we note that for each $(m, k) \in \{1, 2, ..., M\} \times \{1, 2, ..., K\}$, the second partial derivatives of $l(\pi, \theta | D)$
+ w.r.t $\pi_{m}$ and $\theta_{mk}$ are nonpositive. Indeed,
+\[ \frac{\partial^2 l}{\partial \pi_{m}^2} = -\frac{B_{m}}{\pi_{m}^{2}} \le 0\text{, and }\frac{\partial^2 l}{\partial \theta_{mk}^2} = -\frac{A_{mk}}{\theta_{mk}^{2}} \le 0 \]
+Thus, $l(\pi, \theta| D)$ attains its global maximum at the point $(\pi, \theta)$ given in (3) and (4).
+Therefore, the ML estimators for $\pi$ and $\theta$ are given by
+\begin{equation}
+\hat{\pi}_{m} = \frac{B_{m}}{N} = \frac{\textit{number of times the pair  }(m, k)\textit{ is observed}}{\textit{total number of observations}}
+\end{equation}
+and
+\begin{equation}
+\hat{\theta}_{mk} = \frac{A_{mk}}{B_{m}} = \frac{\textit{number of observed pairs of the form  }(m, *)}{\textit{number of times the pair  }(m, k)\textit{ is observed}}
+\end{equation}$\square$\\
+%% It is noteworthy that these estimates are intuitively obtained without all the calculus exposed hereabove. Indeed, simply form a
+%%  table of $M$ rows and $K$ colums, intialized with zeros. For each observation $(z_{n}, x_{n})$, increment the cell corresponding to the intersection of the
+%%  $z_{n}$th row and the $x_{n}$th column by 1. The resulting table table is none other than the joint (absolute) frequency histogram of $Z$ and $Y$, for the given observations.
+%%  Now for each $(m, k)$, the sum of the $m$th row normalized by the total number of observations gives the relative frequency of
+%%  the event ``$Z = m$'' (i.e an estimate for $p(Z = m)$). Likewise, the value in cell $(m, k)$ normalized by the sum of the values in the $m$th row gives an estimate for the relative frequency of the
+%%  event ``$X = k$'' once ``$Z = m$'' is revealled (i.e an estimate for $p(X = k | Z = m)$). These empirical estimates are indeed asymptocally the true model parameters as
+%% the sample size explodes to infinity.
+
+\section{Solution to Question \# 2: Linear Classification}
+\subsection{Generative model (LDA)}
+\subsubsection{(a) Derivation of ML for LDA model}
+By Bayes formula, the likelihood of the $n$th sample point $(x_{n}, y_{n})$ is
+\begin{dmath}
+p(x_{n}, y_{n} | \pi, \mu_{1}, \mu_{2}, \Sigma) = p(y_{n} | \pi)p(x_{n} | y_{n}, \mu_{1}, \mu_{2}, \Sigma) =
+ (\pi\mathcal{N}(x_{n} | \mu_{1}, \Sigma))^{y_{n}}((1 - \pi)\mathcal{N}(x_{n} | \mu_{1}, \Sigma))^{1 - y_{n}}
+\end{dmath}
+And so by the i.i.d assumption on the $N$ sample points, the likelihood the sample is
+\begin{dmath}
+p(D | \pi, \mu_{1}, \mu_{2}, \Sigma) = \prod_{n=1}^{N}{p(x_{n}, y_{n} | \pi, \mu_{1}, \mu_{2}, \Sigma)}
+ = \prod_{n=1}^{N}{(\pi\mathcal{N}(x_{n} | \mu_{1}, \Sigma))^{y_{n}}((1 - \pi)\mathcal{N}(x_{n} | \mu_{1}, \Sigma))^{1 - y_{n}}}\\
+ = \prod_{n=1}^{N}{\prod_{k=1}^{2}{\pi^{y_{n}}(1 - \pi)^{1 - y_{n}}\Bigl((2 \times 3.141592...)^{-\frac{d}{2}}(\det{\Sigma})^{-\frac{1}{2}}\exp{(-\frac{1}{2}(x_{n} - \mu_{k})^{T}\Sigma^{-1}(x_{n} - \mu_{k}))}\Bigr)^{(y_{n} + k + 1)\text{ mod 2}}}}
+\end{dmath}
+Finally, the log-likelihood is
+\begin{dmath}
+ l(\pi, \mu_{1}, \mu_{2}, \Sigma | D) := \log{p(D | \pi, \mu_{1}, \mu_{2}, \Sigma)} = - N\frac{d}{2}\log{(2 \times 3.141592...)}
+- \frac{N}{2}\log{\det{\Sigma}} + \sum_{n=1}^{N}{y_{n}\log{\pi} + (1 - y_{n})\log(1 - \pi)} -\frac{1}{2}\sum_{n=1}^{N}{y_{n}(x_{n} - \mu_{1})^T\Sigma^{-1}(x_{n} - \mu_{1}) + (1 - y_{n})(x_{n} - \mu_{2})^T\Sigma^{-1}(x_{n} - \mu_{2})}
+\end{dmath}
+Setting the gradient w.r.t $\pi$ to 0 and solving yields
+\begin{equation}
+\nabla_{\pi}{l} = \sum_{n=1}^{N}{\frac{y_{n} - \pi}{\pi(1 - \pi)}} = 0 \iff \pi = \frac{\sum_{n=1}^{N}{y_{n}}}{N} = \frac{N_{1}}{N} = \textit{fraction of sample points in class 1}
+\end{equation}
+Taking gradient w.r.t $\mu_{1}$ and setting to 0:
+\begin{equation}
+\nabla_{\mu_{1}}{l} = \sum_{n=1}^{N}{(y_{n}(x_{n} - \mu_{1})^T)\Sigma^{-1}} = 0 \iff \mu_{1} = \frac{\sum_{n=1}^{N}{y_{n}x_{n}}}{\sum_{n=1}^{N}{y_{n}}} = \frac{\sum_{n=1}^{N}{y_{n}x_{n}}}{N_{1}}\\
+  = \textit{centroid of points in class 1}
+\end{equation}
+Similar treatment for $\mu_{2}$ yields
+\begin{equation}
+\mu_{2} =  \frac{\sum_{n=1}^{N}{(1 - y_{n})x_{n}}}{N_{2}}  = \textit{centroid of sample points in class 2}
+\end{equation}
+Finally, taking the gradient w.r.t $\Sigma$ yields\footnote{where we have made use of the chain rule and facts that $\nabla_{\Sigma}{\Sigma^{-1}} = -\Sigma^{-2}$ and $\nabla_{\Sigma}{\log{\det{\Sigma}}} = \Sigma^{-1}$}
+\begin{dmath}
+\nabla_{\Sigma}{l} = \frac{1}{2}\Sigma^{-2}\sum_{n=1}^{N}{y_{n}(x_{n} - \mu_{1})(x_{n} - \mu_{1})^{T} + (1 - y_{n})(x_{n} - \mu_{2})(x_{n} - \mu_{2})^{T}} - \frac{N}{2}\Sigma^{-1}
+\end{dmath}
+Setting $\nabla_{\Sigma}{l} = 0$ in (15) above, one immediately gets
+\begin{dmath}
+\Sigma = \frac{1}{N}\sum_{n=1}^{N}{y_{n}(x_{n} - \mu_{1})(x_{n} - \mu_{1})^{T} + (1 - y_{n})(x_{n} - \mu_{2})(x_{n} - \mu_{2})^{T}}
+ = \frac{N_{1}}{N}\Bigl(\frac{1}{N_{1}}\sum_{n=1}^{N}{y_{n}(x_{n} - \mu_{1})(x_{n} - \mu_{1})^{T}}\Bigr) + \frac{N_{2}}{N}\Bigl(\frac{1}{N_{2}}\sum_{n=1}^{N}{(1 - y_{n})(x_{n} - \mu_{2})(x_{n} - \mu_{2})^{T}}\Bigr)
+ = \Bigl(\frac{N_{1}}{N} \times \textit{variance of sample points in class 1}\Bigr) + \Bigl(\frac{N_{2}}{N} \times \textit{variance of sample points in class 2}\Bigr)
+\end{dmath}
+ By construction, equations (14), (15), (16), and (18) give the sought-for ML\footnote{of course, one can easily check that the Hessian of $l$ is always nonpositive, so that all stationary points are maxima} estimator $(\hat{\pi}, \hat{\mu}_{1}, \hat{\mu}_{2}, \hat{\Sigma})$ of the model parameter $(\pi, \mu_{1}, \mu_{2}, \Sigma)$. $\square$
+\subsubsection{(b) Computation of $p(y = 1|x)$}
+By Bayes formula for conditional probabilities,
+\begin{dmath*}
+p(y = 1 | x) = \frac{p(y = 1)p(x | y = 1)}{p(x)} = \frac{\pi\mathcal{N}(x, \mu_{1}, \Sigma)}{\pi\mathcal{N}(x, \mu_{1}, \Sigma) + (1 - \pi)\mathcal{N}(x, \mu_{2}, \Sigma)}
+ = \frac{\pi\mathcal{N}(x, \mu_{1}, \Sigma)}{\pi\mathcal{N}(x, \mu_{1}, \Sigma) + (1 - \pi)\mathcal{N}(x, \mu_{2}, \Sigma)}\\
+ = \frac{1}{1 + \frac{1 - \pi}{\pi}\frac{\mathcal{N}(x, \mu_{2}, \Sigma)}{\mathcal{N}(x, \mu_{1}, \Sigma)}} = \frac{1}{1 + \frac{1 - \pi}{\pi}
+\exp{(-\frac{1}{2}(x - \mu_{2})^{T}\Sigma^{-1}(x - \mu_{2})) - (x - \mu_{1})^{T}\Sigma^{-1}(x - \mu_{1}))}}\\
+  = \frac{1}{1 + \exp{(-\frac{1}{2}(x - \mu_{2})^{T}\Sigma^{-1}(x - \mu_{2})) - (x - \mu_{1})^{T}\Sigma^{-1}(x - \mu_{1}) + \log{\frac{\pi}{1 - \pi}})}} = \frac{1}{1 + \exp(-\omega^{T}x - \omega_{0})}
+ = \sigma{(\omega^{T}x + \omega_{0})}
+\end{dmath*}, where $\omega := \Sigma^{-1}(\mu_{1} - \mu_{2})$, $\omega_{0} := -\frac{1}{2}(\mu_{1}^{T}\Sigma^{-1}\mu_{1} - \mu_{2}^{T}\Sigma^{-1}\mu_{2}) + \log{\frac{\pi}{1 - \pi}}$, and $\sigma: t\mapsto (1 + \exp{(-t)})^{-1}$ is the logistic sigmoid function as usual.
+\subsubsection{(c)}
+\includegraphics[width=12cm]{LDA_figures.png}
+
+\subsection{Logistic regression}
+\subsubsection{(a)}
+ClassficationA:
+\[
+\hat{\omega} =
+\begin{pmatrix}
+  -208.51093646 & -360.85519961 & -34.87250738
+\end{pmatrix}
+\]
+\\
+ClassficationB:
+\[
+\hat{\omega} =
+\begin{pmatrix}
+  -1.70580049 & 1.0241911 & 1.35052729
+\end{pmatrix}
+\]
+\\
+ClassficationC:
+\[
+\hat{\omega} =
+\begin{pmatrix}
+  -2.20390495 & 0.70969014 & 0.95986694
+\end{pmatrix}
+\]
+\subsubsection{(b)}
+\includegraphics[width=12cm]{LogitReg_figures.png}
+
+\subsection{Linear regression}
+\subsubsection{(a)}
+\[
+\hat{\omega} =
+\begin{pmatrix}
+  -0.12769333 & -0.01700142 &  0.50839981
+\end{pmatrix}
+\]
+
+\subsubsection{(b)}
+\begin{center}
+\includegraphics[width=12cm]{LinearReg_figures.png}
+\end{center}
+
+\subsection{Comparing Logistic Regression, LDA, and Linear Regression}
+\subsubsection{(a)}
+Refer to table 1 above.
+\begin{table}
+\centering
+\caption{Misclassfication rate (on unit scale): LDA vs LogitReg vs LinearReg}
+\begin{tabular}{|l|| c|c| r|}
+  \hline
+      \textbf{ } & \textbf{LDA} & \textbf{LogitReg} & \textbf{LinearReg}\\
+\hline\hline
+
+  \textbf{classificationA.train} & 0.013 & 0.000 & 0.013\\
+\hline
+\textbf{classificationA.test} & 0.020 & 0.034 & 0.021\\
+\hline
+\textbf{classificationB.train} & 0.030 & 0.020 & 0.030\\
+\hline
+\textbf{classificationB.test} & 0.042 & 0.043 & 0.042\\
+\hline
+\textbf{classificationC.train} & 0.055 & 0.040 & 0.055\\
+\hline
+\textbf{classificationC.test} & 0.042 & 0.023 & 0.042\\
+  \hline
+\end{tabular}
+
+\end{table}
+\subsubsection{(b)}
+Refer to 2.5 (d) below (i.e the response to this question is contained in the response to question 2.5 (d)).
+\subsection{QDA model}
+\subsubsection{(a)}
+ClassificationA:
+\[
+\hat{\mu}_{1} =
+  \begin{pmatrix}
+    2.89970947 & -0.893874
+  \end{pmatrix}, 
+\hat{\mu}_{2} =
+  \begin{pmatrix}
+    -2.69232006 & 0.866042
+  \end{pmatrix}, 
+\]
+\[
+\hat{\Sigma}_{1} =
+  \begin{pmatrix}
+    2.31065260013 & -1.0474846166\\-1.0474846166 & 0.575784033524
+  \end{pmatrix}, 
+\hat{\Sigma}_{2} =
+  \begin{pmatrix}
+    2.70442165451 & -1.30085147779\\-1.30085147779 & 0.689695881636
+  \end{pmatrix}
+\]
+\\
+ClassificationB:
+\[
+\hat{\mu}_{1} =
+  \begin{pmatrix}
+    3.34068892667 & -0.835463333333
+  \end{pmatrix}, 
+\hat{\mu}_{2} =
+  \begin{pmatrix}
+    -3.21670733333 & 1.08306733333
+  \end{pmatrix}, 
+\]
+\[
+\hat{\Sigma}_{1} =
+  \begin{pmatrix}
+    2.53885858941 & 1.0642112255\\1.0642112255 & 2.96007891046
+  \end{pmatrix}, 
+\hat{\Sigma}_{2} =
+  \begin{pmatrix}
+    4.15361077903 & -1.33454097463\\-1.33454097463 & 0.516070588066
+  \end{pmatrix}
+\]
+\\
+ClassificationC:
+\[
+\hat{\mu}_{1} =
+  \begin{pmatrix}
+    2.79304820667 & -0.838386666667
+  \end{pmatrix}, 
+\hat{\mu}_{2} =
+  \begin{pmatrix}
+    -2.942328824 & -0.9578284
+  \end{pmatrix}, 
+\]
+\[
+\hat{\Sigma}_{1} =
+  \begin{pmatrix}
+    2.89913916611 & 1.24581547986\\1.24581547986 & 2.92475447969
+  \end{pmatrix}, 
+\hat{\Sigma}_{2} =
+  \begin{pmatrix}
+    2.86914392717 & -1.76197060142\\-1.76197060142 & 6.56438626467
+  \end{pmatrix}
+\]
+
+\subsubsection{(b)}
+\begin{center}
+\includegraphics[width=12cm]{QDA_figures.png}
+\end{center}
+
+\subsubsection{(c)}
+See table 2 below.
+\begin{table}
+\centering
+\caption{Misclassification rate (on unit scale): LDA vs LogitReg vs LinearReg vs QDA}
+\begin{tabular}{|l|| c|c|c| r|}
+  \hline
+      \textbf{ } & \textbf{LDA} & \textbf{LogitReg} & \textbf{LinearReg} & \textbf{QDA}\\
+\hline\hline
+
+  \textbf{classificationA.train} & 0.013 & 0.000 & 0.013 & 0.007\\
+\hline
+\textbf{classificationA.test} & 0.020 & 0.034 & 0.021 & 0.020\\
+\hline
+\textbf{classificationB.train} & 0.030 & 0.020 & 0.030 & 0.013\\
+\hline
+\textbf{classificationB.test} & 0.042 & 0.043 & 0.042 & 0.020\\
+\hline
+\textbf{classificationC.train} & 0.055 & 0.040 & 0.055 & 0.052\\
+\hline
+\textbf{classificationC.test} & 0.042 & 0.023 & 0.042 & 0.038\\
+  \hline
+\end{tabular}
+
+\end{table}
+
+\subsubsection{(d)}
+Refer to table 2 above. We see that QDA is a generalization of LDA, since lines can be viewed as degenerate conics and the decision surface/plane for the QDA is a conic. QDA and LDA agree well when the classes have approximately thesame covariance matrices (classficationA). For classes with different covariance matrices (classficationB), the QDA departs from the LDA, and is the preferred classfier of the 2. Also, neither linear regression nor LDA is powerful enough to do the classifications if $k > 2$, since it’s then possible for a class to be masked by two (for example, as in classificationC). Finally, in the case of Gaussian classes, Logistic regression agrees well with Linear regression, LDA, and QDA when the normality assumptions are met (classificationA, B)  but is more robust (higher prediction power on new data) than the others when these assumptions don't prevail (classificationC). Thus to summarize, QDA is the best of all the classifiers under normality assumptions on the point-clouds, but Logistic regression is more robust to departures from these assumptions. Indeed,
+
+\centering
+\includegraphics[width=12cm]{LDA_LogitReg_LinearReg_QDA_figures.png}
+
+\end{document}
