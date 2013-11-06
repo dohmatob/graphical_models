@@ -5,6 +5,7 @@
 
 import numpy as np
 from scipy import linalg
+from datasets import load_data
 
 
 def _normal_pdf(mean, cov, x):
@@ -172,7 +173,7 @@ class EM(object):
         # fit KMeans model to warmstart
         self._log("Fitting KMeans for warmstarting EM...")
         km = KMeans(self.n_classes, verbose=self.verbose).fit(
-            X, max_iter=max(max_iter // 5, 4))
+            X, max_iter=max_iter)
         self._log("... done (KMeans).")
 
         # initialize means
@@ -229,7 +230,13 @@ class EM(object):
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
-    X = np.loadtxt("EMGaussian.data")
+    X = load_data(
+        "http://www.di.ens.fr/~fbach/courses/fall2013/EMGaussian.data")
+
+    # fit
     em = EM(4).fit(X, max_iter=50)
+
+    # plot results
     plt.scatter(*X.T, c=em.labels_.argmax(axis=0))
+
     plt.show()
